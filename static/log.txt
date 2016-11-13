@@ -1,0 +1,7 @@
+INFO start spark
+WARN in warn
+ERROR exception
+INFO while spark
+DEBUG debug code
+ERROR stop Spark
+INFO end
