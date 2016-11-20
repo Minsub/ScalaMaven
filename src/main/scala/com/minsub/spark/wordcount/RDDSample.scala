@@ -1,4 +1,4 @@
-package com.minsub.spark
+package com.minsub.spark.wordcount
 
 import org.apache.spark.{SparkConf, SparkContext}
 
