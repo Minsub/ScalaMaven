@@ -1,35 +1,25 @@
-package com.minsub.spark.etc
+package com.minsub.spark.io
 
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.DeserializationFeature
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
   * Created by jiminsub on 2016. 11. 20..
   */
-object DataIO {
+object JsonIO {
   val PATH = "file:/Users/jiminsub/workspace/ScalaMaven/"
 
   case class Person(name: String, lovesPandas: Boolean)
 
   def main(args: Array[String]) {
-    val conf = new SparkConf().setMaster("local").setAppName("dataIO")
+    val conf = new SparkConf().setMaster("local").setAppName("jsonIO")
     val sc = new SparkContext(conf)
-
-    // read files from folder (파일명, word 갯수)
-    val filesRDD = sc.wholeTextFiles(PATH + "static/*.*")
-    val wordcountRDD = filesRDD.flatMapValues(_.split(" "))
-      .mapValues(x => 1).reduceByKey(_ + _)
-    println("whileTextFile: " + wordcountRDD.collect().mkString(","))
-
-    // save as Text file
-    //wordcountRDD.saveAsTextFile("static/output/wordCountFiles.txt")
 
     // JSON
     val jsonRDD = sc.textFile("static/sample.json")
-    val result = jsonRDD.mapPartitions(records => {
+    val personRDD = jsonRDD.mapPartitions(records => {
       val mapper = new ObjectMapper with ScalaObjectMapper
       mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
       mapper.registerModule(DefaultScalaModule)
@@ -43,7 +33,16 @@ object DataIO {
       })
     }, true)
 
-    println("JSON: " + result.collect().mkString(","))
+    // show JSON
+    println("JSON: " + personRDD.collect().mkString(","))
+
+    // Save to JSON files
+    personRDD.filter(_.lovesPandas).mapPartitions(records => {
+      val mapper = new ObjectMapper with ScalaObjectMapper
+      mapper.registerModule(DefaultScalaModule)
+      records.map(mapper.writeValueAsString(_))
+    }).saveAsTextFile(PATH+"static/sample_output.json")
+
   }
 
 }
