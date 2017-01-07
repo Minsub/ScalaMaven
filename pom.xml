@@ -101,6 +101,20 @@
       <version>9.4.1212</version>
     </dependency>
 
+    <!-- JT400 for as400 DB2 -->
+    <dependency>
+      <groupId>net.sf.jt400</groupId>
+      <artifactId>jt400</artifactId>
+      <version>8.7</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.scalikejdbc/scalikejdbc_2.11 -->
+    <dependency>
+      <groupId>org.scalikejdbc</groupId>
+      <artifactId>scalikejdbc_2.11</artifactId>
+      <version>2.5.0</version>
+    </dependency>
+
 
   </dependencies>
 
