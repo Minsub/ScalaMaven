@@ -10,19 +10,35 @@ object ScalikejdbcTransaction extends App {
   val pw = "wlalstjq2"
 
   DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver())
-  ConnectionPool.singleton(url, id, pw)  // Apache Commons DBCP by default.
+  ConnectionPool.singleton(url, id, pw)
+  // Apache Commons DBCP by default.
 
-  val conn = DB(ConnectionPool.borrow())
-  conn.begin()
+  // Transaction
+  // #1
+  val db = DB(ConnectionPool.borrow())
+  try {
+    db.begin()
+    db withinTx { implicit session =>
+      // DELETE
+      SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("US").update.apply()
 
-  DB withinTx  { implicit session =>
+      // INSERT
+      SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("US", "E", "SIN").update.apply()
+    }
+    db.commit()
+  } finally { db.close() }
+
+
+
+  // #2
+  val count = DB localTx { implicit session =>
     // DELETE
-    SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("US").update.apply()
+    SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("EU").update.apply()
 
     // INSERT
-    SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("US","E","SIN").update.apply()
+    SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("EU","W","GBR").update.apply()
   }
 
-  conn.commit()
-  conn.close()
+
+
 }
