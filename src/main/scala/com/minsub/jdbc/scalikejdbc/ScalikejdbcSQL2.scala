@@ -9,8 +9,17 @@ object ScalikejdbcSQL2 extends App {
   val id = "DPBIZJMS"
   val pw = "wlalstjq2"
 
+  //SETTINGS
+  val settings = ConnectionPoolSettings(
+    initialSize = 5,
+    maxSize = 20,
+    connectionTimeoutMillis = 3000L,
+    validationQuery = "SELECT 1 FROM SYSIBM.SYSDUMMY1"
+  )
+
   DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver())
-  ConnectionPool.singleton(url, id, pw)  // Apache Commons DBCP by default.
+  ConnectionPool.singleton(url, id, pw, settings)  // Apache Commons DBCP by default.
+
 
   implicit val session: DBSession = AutoSession
 
