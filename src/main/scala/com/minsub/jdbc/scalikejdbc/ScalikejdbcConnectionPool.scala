@@ -1,29 +1,29 @@
 package com.minsub.jdbc.scalikejdbc
 
-import java.sql.DriverManager
-
 import scalikejdbc._
 
 object ScalikejdbcConnectionPool extends App {
-  val url = "jdbc:as400://203.242.35.200;"
-  val id = "DPBIZJMS"
-  val pw = "wlalstjq2"
+  val settings = ConnectionPoolSettings(
+    initialSize = 5,
+    maxSize = 20,
+    connectionTimeoutMillis = 3000L,
+    validationQuery = "SELECT 1"
+  )
 
-  DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver())
-  ConnectionPool.singleton(url, id, pw)  // Apache Commons DBCP by default.
+  Class.forName("com.mysql.jdbc.Driver")
+  ConnectionPool.singleton(JDBCInfo.URL, JDBCInfo.ID, JDBCInfo.PW, settings)  // Apache Commons DBCP by default.
 
+  // borrow from pool
   using(DB(ConnectionPool.borrow())) { db =>
-    val name: Option[String] = db readOnly { implicit session =>
-      SQL("SELECT 'A' COL1, 'B' COL2 FROM SYSIBM.SYSDUMMY1").map(rs => rs.string("COL1")).single.apply()
+    val id: Option[String] = db readOnly { implicit session =>
+      SQL("SELECT id FROM user LIMIT 1").map(rs => rs.string("id")).single.apply()
     }
-    println("result: " + name.get)
+    println("id: " + id.get)
   }
 
   // simpler
-  val name: Option[String] = DB readOnly { implicit session =>
-    SQL("SELECT 'A' COL1, 'B' COL2 FROM SYSIBM.SYSDUMMY1").map(rs => rs.string("COL1")).single.apply()
+  val id: Option[String] = DB readOnly { implicit session =>
+    SQL("SELECT id FROM user LIMIT 1").map(rs => rs.string("id")).single.apply()
   }
-
-  println("result: " + name.get)
-
+  println("id: " + id.get)
 }

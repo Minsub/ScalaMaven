@@ -5,65 +5,59 @@ import java.sql.{DriverManager, ResultSet}
 import scalikejdbc._
 
 object ScalikejdbcSQL extends App {
-  val url = "jdbc:as400://203.242.35.200;"
-  val id = "DPBIZJMS"
-  val pw = "wlalstjq2"
+  Class.forName("com.mysql.jdbc.Driver")
+  ConnectionPool.singleton(JDBCInfo.URL, JDBCInfo.ID, JDBCInfo.PW)
 
-  DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver())
-  ConnectionPool.singleton(url, id, pw)  // Apache Commons DBCP by default.
-
-  // simpler
+  val sqlSimple = "SELECT id FROM user LIMIT 1"
+  // simple
   val name: Option[String] = DB readOnly { implicit session =>
-    SQL("SELECT 'A' COL1, 'B' COL2 FROM SYSIBM.SYSDUMMY1").map(rs => rs.string("COL1")).single.apply()
+    SQL(sqlSimple).map(rs => rs.string("id")).single.apply()
   }
-  //println("simpler result: " + name.get)
+  println("simple result: " + name.get)
 
-  // directly DBSession
-  // #1
+  // directly DBSession #1
   val name2: Option[String] = DB readOnly { session =>
-    session.single("SELECT 'Sing' COL1 FROM SYSIBM.SYSDUMMY1") { rs => rs.string("COL1") }
+    session.single(sqlSimple) { rs => rs.string("id") }
   }
-  //println("direct session result #1: " + name2.get)
+  println("direct session result #1: " + name2.get)
 
-  // #2
+  // directly DBSession #2
   implicit val session = DB.readOnlySession()
-  val name3: Option[String] = SQL("SELECT TSTTRD FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("US").map(rs => rs.string(1)).single.apply()
+  val name3: Option[String] = SQL(sqlSimple).map(rs => rs.string(1)).single.apply()
   session.close()
-//  println("direct session result #2: " + name3.get)
+  println("direct session result #2: " + name3.get)
 
 
-  case class Trade(name: String, idx: Int)
-  val mapper = (rs: WrappedResultSet) => Trade(rs.string("name"), rs.int("idx"))
+  case class User(id: String, age: Int)
+  val mapper = (rs: WrappedResultSet) => User(rs.string("id"), rs.int("age"))
 
   DB autoCommit  { implicit session =>
     // SELECT
-    val all: List[Trade] = SQL("SELECT TSTTRD name, 1 idx FROM PLIBBP.GBPATEST1").map(mapper).list.apply()
-    val first: Option[Trade] = SQL("SELECT TSTTRD name, 1 idx FROM PLIBBP.GBPATEST1").map(mapper).first.apply()
-    val selected: Option[Trade] = SQL("SELECT TSTTRD name, 1 idx FROM PLIBBP.GBPATEST1 WHERE TSTTRD=? and TSTBND=?")
-                                     .bind("EU","W").map(mapper).single.apply()
+    val all: List[User] = SQL("SELECT * FROM user").map(mapper).list.apply()
+    val first: Option[User] = SQL("SELECT * FROM user").map(mapper).first.apply()
+    val selected: Option[User] = SQL("SELECT * FROM user WHERE id=? and age=?").bind("test1", 20).map(mapper).single.apply()
     println(s"all => \n $all")
     println(s"first => \n $first")
     println(s"selected => \n $selected")
 
     // DELETE
-    SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("US").update.apply()
-    SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTBND=?").bind("B").update.apply()
+    SQL("DELETE FROM user WHERE id=?").bind("test2").update.apply()
 
     // INSERT
-    SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("US","E","SIN").update.apply()
+    SQL("INSERT INTO user values (?, ?)").bind("test2", 33).update.apply()
 
-    // excute
+    // EXECUTE
     //SQL("create table company (id integer primary key, name varchar(30))").execute.apply()
   }
 
   // Batch API ( java.sql.PreparedStatement#executeBatch() )
   DB localTx { implicit session =>
     // placeholder
-    val batcharams1: Seq[Seq[Any]] = (1 to 3).map(i => Seq("T"+i, "B" ,"KO" + i))
-    SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").batch(batcharams1: _*).apply()
+    val batcharams1: Seq[Seq[Any]] = (5 to 7).map(i => Seq("test"+i, i * 2))
+    SQL("INSERT INTO user values (?, ?)").batch(batcharams1: _*).apply()
 
     // bind by name
-    val batchParams2: Seq[Seq[(Symbol, Any)]] =  (4 to 6).map(i => Seq('trd -> ("T"+i), 'bnd -> "B"))
-    SQL("INSERT INTO PLIBBP.GBPATEST1 (TSTTRD, TSTBND) values ({trd}, {bnd})").batchByName(batchParams2: _*).apply()
+    val batchParams2: Seq[Seq[(Symbol, Any)]] =  (8 to 9).map(i => Seq('id -> ("unknown"+i), 'age -> i * 3))
+    SQL("INSERT INTO user(id,age) VALUES({id}, {age})").batchByName(batchParams2: _*).apply()
   }
 }

@@ -1,44 +1,31 @@
 package com.minsub.jdbc.scalikejdbc
 
-import java.sql.DriverManager
-
 import scalikejdbc._
 
 object ScalikejdbcTransaction extends App {
-  val url = "jdbc:as400://203.242.35.200;"
-  val id = "DPBIZJMS"
-  val pw = "wlalstjq2"
+  Class.forName("com.mysql.jdbc.Driver")
+  ConnectionPool.singleton(JDBCInfo.URL, JDBCInfo.ID, JDBCInfo.PW)
 
-  DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver())
-  ConnectionPool.singleton(url, id, pw)
-  // Apache Commons DBCP by default.
-
-  // Transaction
-  // #1
+  // Transaction #1
   val db = DB(ConnectionPool.borrow())
   try {
     db.begin()
     db withinTx { implicit session =>
       // DELETE
-      SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("US").update.apply()
+      SQL("DELETE FROM user WHERE id=?").bind("test4").update.apply()
 
       // INSERT
-      SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("US", "E", "SIN").update.apply()
+      SQL("INSERT INTO user VALUES (?, ?)").bind("test4", 11).update.apply()
     }
     db.commit()
   } finally { db.close() }
 
-
-
-  // #2
+  // Transaction #2
   val count = DB localTx { implicit session =>
     // DELETE
-    SQL("DELETE FROM PLIBBP.GBPATEST1 WHERE TSTTRD=?").bind("EU").update.apply()
+    SQL("DELETE FROM user WHERE id=?").bind("test5").update.apply()
 
     // INSERT
-    SQL("INSERT INTO PLIBBP.GBPATEST1 values (?, ?, ?)").bind("EU","W","GBR").update.apply()
+    SQL("INSERT INTO user VALUES (?, ?)").bind("test5", 15).update.apply()
   }
-
-
-
 }
