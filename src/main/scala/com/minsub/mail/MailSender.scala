@@ -4,13 +4,18 @@ import org.apache.commons.mail._
 
 object MailSender extends App {
   val email: Email = new SimpleEmail
-  //email.setHostName("mailing.hmm21.com")
+
+  // by google
   email.setHostName("smtp.googlemail.com")
   email.setSmtpPort(465);
-  email.setAuthenticator(new DefaultAuthenticator("jiminsub@gmail.com", "wlalstjq1@"));
+  email.setAuthenticator(new DefaultAuthenticator(MailInfo.ID, MailInfo.PW));
   email.setSSLOnConnect(true);
-  //email.setFrom("test@hmm21.com")
-  email.setFrom("jiminsub@gmail.com")
+  email.setFrom(MailInfo.ID)
+
+  // by HMM mail
+//  email.setHostName("mailing.hmm21.com")
+//  email.setFrom("test@hmm21.com")
+
   email.setSubject("TestMail")
   email.setMsg("This is a test mail ... :-)")
   email.addTo("minsub.ji@hmm21.com")
