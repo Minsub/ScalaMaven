@@ -7,6 +7,10 @@ object Test2 {
 
   def main(args: Array[String]): Unit = {
     println("Hello Test2")
+
+    println("Hello Test3")
+
+    println("Hello Test4")
   }
 
 }
